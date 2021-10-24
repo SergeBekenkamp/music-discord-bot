@@ -1,6 +1,7 @@
 import {SlashCommandBuilder} from "@discordjs/builders";
 import * as Discord from "discord.js";
-import * as Ping from './playCommand/index'
+import * as Play from './playCommand/index'
+import * as Stop from './stopCommand/index'
 
 export type Command = {
     commandBuilder: Partial<SlashCommandBuilder>,
@@ -9,5 +10,5 @@ export type Command = {
 }
 
 export async function getCommands(): Promise<Command[]> {
-    return [Ping];
+    return [Play, Stop];
 }
