@@ -86,3 +86,9 @@ typings/
 
 # DynamoDB Local files
 .dynamodb/
+
+# Build files
+build/
+
+# IDE files
+.idea/
