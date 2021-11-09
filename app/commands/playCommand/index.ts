@@ -1,8 +1,8 @@
 import {SlashCommandBuilder} from "@discordjs/builders";
 import * as Discord from 'discord.js';
-import {CommandInteractionOption} from 'discord.js';
+import {CommandInteractionOption, MessageEmbed} from 'discord.js';
 import {AudioPlayer} from "@discordjs/voice";
-import {getOrCreateGuild,} from "../../data/Guild";
+import {getOrCreateGuild, SongQueue,} from "../../data/Guild";
 import {createYoutubeDlPlayer} from "../../integrations/youtube-dl";
 import {createYoutubeDlStreamer} from "../../integrations/youtube-stream";
 
@@ -20,12 +20,13 @@ function getValue(name: string, data: readonly CommandInteractionOption[]): Comm
     return data.find(item => item.name === name);
 }
 
-
 export type SearchResult = {
     title: string,
     description?: string,
-    image?: string
+    image?: string,
+    url?: string,
 }
+
 export type PlayIntegration<T extends SearchResult = SearchResult> = {
     search(search: string): Promise<T | undefined>;
     play(song: T, player: AudioPlayer): Promise<void>;
@@ -39,7 +40,9 @@ const integrations = {
 const handler = async (interaction: Discord.CommandInteraction) => {
     console.log('Handling play interaction')
     const searchValue = getValue("search", interaction.options.data)?.value as string ??'';
-    const integration = integrations['stream']();
+    const integrationKey: keyof typeof integrations = 'stream';
+
+    const integration = integrations[integrationKey]();
 
     const searchResult = await integration.search(searchValue);
 
@@ -64,15 +67,36 @@ const handler = async (interaction: Discord.CommandInteraction) => {
 
     const channel = interaction.client.channels.cache.get(channelId);
     if (channel?.isVoice()) {
-        interaction.reply(`Queueing song: ${searchResult.title}`);
         const guild = await getOrCreateGuild(guildId);
+        guild.queueSong(integration, searchResult, interaction.member?.user.username || '');
+
+        const embed = createEmbed(guild.getQueue(), searchResult);
+        await interaction.reply({
+            embeds: [embed],
+        });
+
         const voice = await guild.getOrJoinVoiceChannel(channelId)
-        guild.queueSong(integration, searchResult);
         guild.startMusicQueue(voice);
     }
-
-
 };
+
+function createEmbed(queue: SongQueue, song: SearchResult) {
+    let q = ``;
+    for(let i = 1; i < queue.length && i < 5; i++) {
+        q += `\n${i}. **${queue[i].search.title}** by: ${queue[i].requester}`;
+    }
+
+    const embed = new MessageEmbed()
+        .addField(`Now queueing`, queue[queue.length -1].search.title)
+        .addField('Currently playing', queue[0].search.title)
+    if(q.length) {
+        embed.addField("Current queue", q)
+    }
+
+    return embed;
+}
+
+
 
 
 

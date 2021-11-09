@@ -2,19 +2,20 @@ import {
     AudioPlayer,
     AudioPlayerStatus,
     createAudioPlayer,
-    createAudioResource,
     getVoiceConnection,
     joinVoiceChannel,
     NoSubscriberBehavior,
     VoiceConnection,
     VoiceConnectionStatus
 } from "@discordjs/voice";
-import {getDiscordClient} from "../index";
+
 import {PlayIntegration, SearchResult} from "../commands/playCommand";
+import {getDiscordClient} from "./DiscordClient";
 
 export type SongQueue = Array<{
     integration: PlayIntegration,
     search: SearchResult,
+    requester: string,
 }>
 
 
@@ -37,6 +38,8 @@ export class Guild {
     constructor(id: string ) {
         this.id = id;
     }
+
+
 
     public async getOrJoinVoiceChannel(channelId: string) {
         const client = getDiscordClient();
@@ -100,11 +103,16 @@ export class Guild {
         return player;
     };
 
-    public async queueSong( integration: PlayIntegration, search: SearchResult) {
+    public queueSong(integration: PlayIntegration, search: SearchResult, userName: string) {
         this.queue.push({
             integration,
             search,
+            requester: userName
         });
+    }
+
+    public getQueue(): SongQueue {
+        return this.queue;
     }
 
     public stopMusic() {

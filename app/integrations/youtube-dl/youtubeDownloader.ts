@@ -1,13 +1,7 @@
 import YoutubeMp3Downloader from "youtube-mp3-downloader";
-import {AudioStreamable} from "../../AudioStreamable";
 import * as fs from "fs";
 
-
-
-
-
-
-export function youtubeDownloader(id: string): Promise<AudioStreamable>{
+export function youtubeDownloader(id: string): Promise<string>{
     const path = 'c:/ffmpeg';
     if(fs.existsSync(`${path}/${id}.mp3`)) {
         return Promise.resolve(`${path}/${id}.mp3`);
